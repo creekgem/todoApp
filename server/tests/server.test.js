@@ -74,55 +74,106 @@ describe('POST /todos', ()=> {
 
     });
 
-    describe('GET /todos', ()=>{
+});
 
-        it('should get all todos', (done)=>{
+describe('GET /todos', ()=>{
 
-            request(app)
-            .get('/todos')
-            .expect(200)
-            .expect(res=>{
-                expect(res.body.todos.length).toBe(2)
-            })
-            .end(done)
+    it('should get all todos', (done)=>{
+
+        request(app)
+        .get('/todos')
+        .expect(200)
+        .expect(res=>{
+            expect(res.body.todos.length).toBe(2)
+        })
+        .end(done)
+
+    });
+
+});
+
+describe('GET /todos/:id', ()=>{
+
+    it('should return todo doc', (done)=> {            
+
+        request(app)
+        .get(`/todos/${todos[0]._id.toHexString()}`)
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo.text).toBe(todos[0].text);
+        })
+        .end(done);
+
+    });
+
+    it('should return 404 if todo not found', (done)=>{
+
+        let newId = new ObjectID().toHexString();
+        request(app)
+        .get(`/todos/${newId}`)
+        .expect(404)
+        .end(done)
+        
+    });
+
+    it('should return 404 if non-object is passed', (done)=>{
+
+        request(app)
+        .get('/todos/123')
+        .expect(404)
+        .end(done)
+        
+    });
+
+});
+
+describe('DELETE /todos/:id', ()=>{
+
+    it('should delete todo', (done)=>{
+
+        const theId = todos[0]._id.toHexString();
+
+        request(app)
+        .delete(`/todos/${theId}`)
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo.text).toBe(todos[0].text);
+        })
+        .end((err,res)=>{
+
+            if(err) {
+                return done(err);
+            }
+            
+            Todo.findById(theId).then((result)=>{
+
+                expect(result).toNotExist();
+                done();
+
+            }).catch(err=>{
+                return done(err)
+            });
 
         });
 
     });
+    it('should return 404 if todo not found', (done)=>{
 
-    describe('GET /todos/:id', ()=>{
+        let newId = new ObjectID();
 
-        it('should return todo doc', (done)=> {            
+        request(app)
+        .delete(`/todos/${newId}`)
+        .expect(404)
+        .end(done);
 
-            request(app)
-            .get(`/todos/${todos[0]._id.toHexString()}`)
-            .expect(200)
-            .expect((res)=>{
-                expect(res.body.todo.text).toBe(todos[0].text);
-            })
-            .end(done);
+    });
+    it('should return 404 if non-object is passed', (done)=>{
 
-        });
-
-        it('should return 404 if todo not found', (done)=>{
-
-            let newId = new ObjectID().toHexString();
-            request(app)
-            .get(`/todos/${newId}`)
-            .expect(404)
-            .end(done)
-            
-        });
-
-        it('should return 404 if non-object is passed', (done)=>{
-
-            request(app)
-            .get('/todos/123')
-            .expect(404)
-            .end(done)
-            
-        });
+        request(app)
+        .delete('/todos/123')
+        .expect(404)
+        .end(done);
 
     });
 
-})
+});
